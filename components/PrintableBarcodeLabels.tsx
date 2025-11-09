@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import BarcodeSVG from './BarcodeSVG';
+import QRCodeSVG from './QRCodeSVG'; // Changed from BarcodeSVG to QRCodeSVG
 import { Dna } from 'lucide-react';
 
 const PrintableBarcodeLabels: React.FC = () => {
@@ -27,8 +27,8 @@ const PrintableBarcodeLabels: React.FC = () => {
             {drugsWithBarcodes.map(drug => (
                 <div key={drug.id} className="label">
                     <div className="label-drug-name">{drug.name}</div>
-                    <div className="label-barcode-svg">
-                        {drug.internalBarcode && <BarcodeSVG value={drug.internalBarcode} />}
+                    <div className="label-qrcode-svg">
+                        {drug.internalBarcode && <QRCodeSVG value={drug.internalBarcode} size={150} />}
                     </div>
                     <div className="label-barcode-text">{drug.internalBarcode}</div>
                 </div>
@@ -36,45 +36,51 @@ const PrintableBarcodeLabels: React.FC = () => {
             <style>{`
                 .printable-labels-container {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(6cm, 1fr));
-                    gap: 1cm;
-                    padding: 1cm;
+                    grid-template-columns: repeat(auto-fill, minmax(5cm, 1fr));
+                    gap: 0.5cm;
+                    padding: 0.5cm;
                 }
                 .label {
                     border: 1px dashed #ccc;
-                    padding: 0.5cm;
+                    padding: 0.3cm;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
-                    justify-content: space-between;
+                    justify-content: center;
                     text-align: center;
                     page-break-inside: avoid;
-                    background-color: white; /* Ensure it prints on colored backgrounds */
+                    background-color: white;
+                    aspect-ratio: 1 / 1; /* Make it square */
                 }
                 .label-drug-name {
-                    font-size: 10pt;
+                    font-size: 8pt;
                     font-weight: bold;
-                    margin-bottom: 0.5cm;
+                    margin-bottom: 0.2cm;
                     word-break: break-word;
                     color: black;
                 }
-                .label-barcode-svg {
-                    margin-bottom: 0.25cm;
-                }
-                .label-barcode-svg svg {
-                    max-width: 100%;
-                    height: 2.5cm;
+                .label-qrcode-svg {
+                    flex-grow: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 100%;
+                    max-width: 4cm;
+                    margin-bottom: 0.2cm;
                 }
                 .label-barcode-text {
                     font-family: monospace;
-                    font-size: 8pt;
-                    letter-spacing: 1px;
+                    font-size: 7pt;
+                    letter-spacing: 0.5px;
                     color: black;
                 }
                 @media print {
-                    /* The modal's print styles will handle hiding other elements */
                     .printable-labels-container {
                         padding: 0;
+                        gap: 0;
+                    }
+                    .label {
+                        border: 1px solid #000; /* Use a solid border for cutting guides */
                     }
                 }
             `}</style>

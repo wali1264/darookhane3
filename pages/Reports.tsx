@@ -9,6 +9,7 @@ import PrintablePurchaseInvoice from '../components/PrintablePurchaseInvoice';
 import PrintableSupplierLedger, { Transaction } from '../components/PrintableSupplierLedger';
 import { supabase } from '../lib/supabaseClient';
 import PrintableBarcodeLabels from '../components/PrintableBarcodeLabels';
+import PrintPreviewModal from '../components/PrintPreviewModal';
 
 
 // ============================================================================
@@ -461,35 +462,8 @@ const SupplierReports: React.FC<{ dateRange: { start: Date, end: Date } }> = ({ 
 };
 
 // ============================================================================
-// Shared Modals (Print, Purchase Details)
+// Shared Modals (Purchase Details)
 // ============================================================================
-
-const PrintPreviewModal: React.FC<{ title: string; onClose: () => void; children: React.ReactNode }> = ({ title, onClose, children }) => {
-    return (
-        <Modal title={title} onClose={onClose}>
-            <div className="printable-area bg-white text-black p-4">
-                {children}
-            </div>
-            <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-gray-700 print-hidden">
-                <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-500">بستن</button>
-                <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-700"><Printer size={18}/>چاپ نهایی</button>
-            </div>
-            <style>{`
-                @media print {
-                    .printable-area {
-                        background: white !important;
-                        color: black !important;
-                    }
-                    /* Content-specific print styles should be in the child components */
-                    .report-content-wrapper {
-                        max-height: none !important;
-                        overflow: visible !important;
-                    }
-                }
-            `}</style>
-        </Modal>
-    );
-};
 
 const PurchaseDetailsModal: React.FC<{ invoice: PurchaseInvoice; supplierName: string; onClose: () => void }> = ({ invoice, supplierName, onClose }) => {
     return (

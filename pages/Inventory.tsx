@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { Drug, DrugBatch, DrugType, ExpiryThreshold } from '../types';
 import Modal from '../components/Modal';
-import { Plus, Edit, Trash2, Sparkles, PackageOpen } from 'lucide-react';
+import { Plus, Edit, Trash2, Sparkles, PackageOpen, Printer } from 'lucide-react';
 import { useVoiceInput } from '../hooks/useVoiceInput';
 import VoiceControlHeader from '../components/VoiceControlHeader';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,10 +11,13 @@ import { useNotification } from '../contexts/NotificationContext';
 import { logActivity } from '../lib/activityLogger';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { supabase } from '../lib/supabaseClient';
+import PrintLabelsModal from '../components/PrintLabelsModal';
 
 const Inventory: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+  const [isPrintLabelsModalOpen, setIsPrintLabelsModalOpen] = useState(false);
+  const [drugToPrintLabels, setDrugToPrintLabels] = useState<Drug | null>(null);
   const [selectedDrugForBatches, setSelectedDrugForBatches] = useState<Drug | null>(null);
   const [editingDrug, setEditingDrug] = useState<Drug | null>(null);
   const { hasPermission } = useAuth();
@@ -68,10 +71,17 @@ const Inventory: React.FC = () => {
     setSelectedDrugForBatches(drug);
     setIsBatchModalOpen(true);
   };
+  
+  const openPrintLabelsModal = (drug: Drug) => {
+    setDrugToPrintLabels(drug);
+    setIsPrintLabelsModalOpen(true);
+  };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setIsBatchModalOpen(false);
+    setIsPrintLabelsModalOpen(false);
+    setDrugToPrintLabels(null);
     setEditingDrug(null);
     setSelectedDrugForBatches(null);
   };
@@ -153,6 +163,9 @@ const Inventory: React.FC = () => {
                         <td className="px-6 py-4">${drug.salePrice.toFixed(2)}</td>
                         <td className="px-6 py-4 flex items-center gap-4">
                             <button onClick={() => openBatchModal(drug)} className="text-gray-400 hover:text-white" title="مشاهده بچ‌ها"><PackageOpen size={18} /></button>
+                            <button onClick={() => openPrintLabelsModal(drug)} disabled={!drug.internalBarcode} className="text-green-400 hover:text-green-300 disabled:text-gray-600 disabled:cursor-not-allowed" title={!drug.internalBarcode ? "این دارو بارکد داخلی ندارد" : "چاپ برچسب"}>
+                                <Printer size={18} />
+                            </button>
                             {hasPermission('inventory:edit') && <button onClick={() => openModalForEdit(drug)} disabled={!isOnline} className="text-blue-400 hover:text-blue-300 disabled:text-gray-500 disabled:cursor-not-allowed" title={!isOnline ? "این عملیات در حالت آفلاین در دسترس نیست" : "ویرایش"}><Edit size={18} /></button>}
                             {hasPermission('inventory:delete') && <button onClick={() => handleDelete(drug.id)} disabled={!isOnline} className="text-red-400 hover:text-red-300 disabled:text-gray-500 disabled:cursor-not-allowed" title={!isOnline ? "این عملیات در حالت آفلاین در دسترس نیست" : "حذف"}><Trash2 size={18} /></button>}
                         </td>
@@ -168,6 +181,9 @@ const Inventory: React.FC = () => {
       )}
       {isBatchModalOpen && selectedDrugForBatches && (
         <BatchDetailsModal drug={selectedDrugForBatches} onClose={closeModal} />
+      )}
+      {isPrintLabelsModalOpen && drugToPrintLabels && (
+        <PrintLabelsModal drug={drugToPrintLabels} onClose={closeModal} />
       )}
     </div>
   );

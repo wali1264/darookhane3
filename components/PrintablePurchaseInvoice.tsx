@@ -19,71 +19,82 @@ const PrintablePurchaseInvoice = React.forwardRef<HTMLDivElement, PrintablePurch
   }, [settings]);
 
   return (
-    <div ref={ref} className="bg-white text-black p-6 printable-area">
-      <div className="text-center mb-8 flex flex-col items-center border-b border-gray-200 pb-6">
-        {pharmacyInfo.logo && <img src={pharmacyInfo.logo} alt="Pharmacy Logo" className="h-24 w-auto mb-3 object-contain" />}
-        <h1 className="text-4xl font-bold text-gray-800">{pharmacyInfo.name}</h1>
-        <p className="text-gray-500 mt-1">فاکتور خرید</p>
+    <div ref={ref} className="bg-white text-black p-2 printable-area">
+      <div className="text-center mb-4 flex flex-col items-center border-b border-gray-300 pb-2">
+        {pharmacyInfo.logo && <img src={pharmacyInfo.logo} alt="Pharmacy Logo" className="h-16 w-auto mb-2 object-contain" />}
+        <h1 className="text-lg font-bold text-gray-900">{pharmacyInfo.name}</h1>
+        <p className="text-xs text-gray-600">فاکتور خرید</p>
       </div>
-      <div className="flex justify-between mb-6 text-base text-gray-700">
-        <div>
-          <p><span className="font-semibold text-gray-900">شماره فاکتور:</span> {invoice.invoiceNumber}</p>
-          <p><span className="font-semibold text-gray-900">تامین‌کننده:</span> {supplierName}</p>
+      <div className="mb-4 text-xs text-gray-800">
+        <p><span className="font-semibold">شماره فاکتور:</span> {invoice.invoiceNumber}</p>
+        <p><span className="font-semibold">تامین‌کننده:</span> {supplierName}</p>
+        <p><span className="font-semibold">تاریخ:</span> {new Date(invoice.date).toLocaleDateString('fa-IR')}</p>
+      </div>
+      
+      {/* New Vertical Layout */}
+      <div className="w-full text-xs text-right space-y-1">
+        {/* Header */}
+        <div className="flex font-semibold bg-gray-100 p-1 border-y border-gray-300">
+            <div style={{ width: '65%' }}>شرح</div>
+            <div style={{ width: '35%', textAlign: 'left' }}>جمع کل</div>
         </div>
-        <div>
-          <p><span className="font-semibold text-gray-900">تاریخ:</span> {new Date(invoice.date).toLocaleDateString('fa-IR')}</p>
+        {/* Items */}
+        <div className="space-y-2 pt-1">
+            {invoice.items.map((item, index) => (
+                <div key={index} className="border-b border-dashed border-gray-200 pb-2">
+                    <div className="flex justify-between items-start">
+                        <span className="font-medium" style={{ width: '65%', wordBreak: 'break-word' }}>{item.name}</span>
+                        <span className="font-mono text-left" style={{ width: '35%' }}>${(item.quantity * item.purchasePrice).toFixed(2)}</span>
+                    </div>
+                    <div className="text-gray-600 text-2xs pr-2 mt-1">
+                        <span>تعداد: {item.quantity}</span>
+                        <span className="mx-1">|</span>
+                        <span>قیمت: ${item.purchasePrice.toFixed(2)}</span>
+                        <br/>
+                        <span>لات: {item.lotNumber}</span>
+                        <span className="mx-1">|</span>
+                        <span>انقضا: {new Date(item.expiryDate).toLocaleDateString('fa-IR')}</span>
+                    </div>
+                </div>
+            ))}
         </div>
       </div>
-      <table className="w-full text-base text-right border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-3 font-bold border text-gray-700">#</th>
-            <th className="p-3 font-bold border text-gray-700 text-right">نام دارو</th>
-            <th className="p-3 font-bold border text-gray-700 text-center">تعداد</th>
-            <th className="p-3 font-bold border text-gray-700 text-center">قیمت واحد</th>
-            <th className="p-3 font-bold border text-gray-700 text-center">شماره لات</th>
-            <th className="p-3 font-bold border text-gray-700 text-center">تاریخ انقضا</th>
-            <th className="p-3 font-bold border text-gray-700 text-left">قیمت کل</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoice.items.map((item, index) => (
-            <tr key={index} className="border-b text-gray-800">
-              <td className="p-3 border align-top">{index + 1}</td>
-              <td className="p-3 border align-top font-medium text-right">{item.name}</td>
-              <td className="p-3 border align-top text-center">{item.quantity}</td>
-              <td className="p-3 border align-top text-center">${item.purchasePrice.toFixed(2)}</td>
-              <td className="p-3 border align-top text-center">{item.lotNumber}</td>
-              <td className="p-3 border align-top text-center">{new Date(item.expiryDate).toLocaleDateString('fa-IR')}</td>
-              <td className="p-3 border align-top text-left">${(item.quantity * item.purchasePrice).toFixed(2)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="mt-8 flex justify-end">
+
+      <div className="mt-4 flex justify-end">
         <div className="w-full max-w-xs text-right">
-          <div className="flex justify-between items-center p-4 bg-gray-100 rounded-lg">
-            <span className="font-bold text-xl text-gray-900">مبلغ کل:</span>
-            <span className="font-bold text-xl text-gray-900">${invoice.totalAmount.toFixed(2)}</span>
+          <div className="flex justify-between items-center p-2 bg-gray-100 rounded-md">
+            <span className="font-bold text-sm text-gray-900">مبلغ کل:</span>
+            <span className="font-bold text-sm text-gray-900">${invoice.totalAmount.toFixed(2)}</span>
           </div>
         </div>
       </div>
-      <div className="text-center text-xs text-gray-500 mt-10">
+      <div className="text-center text-2xs text-gray-500 mt-6">
         <p>{window.location.host}</p>
       </div>
        <style>{`
+        .text-2xs {
+            font-size: 0.7rem;
+            line-height: 1.4;
+        }
         @media print {
           @page {
-            size: A4;
-            margin: 1cm;
+            margin: 0.5cm;
           }
           .printable-area {
-            font-size: 11pt;
+            font-size: 9pt;
+            width: 100%;
+            padding: 0.5cm;
+            box-sizing: border-box;
+            background: white !important;
+            color: black !important;
           }
            .bg-gray-100 {
             background-color: #f3f4f6 !important;
             -webkit-print-color-adjust: exact !important;
             color-adjust: exact !important;
+          }
+           table, th, td {
+             border-color: #999 !important;
           }
         }
       `}</style>

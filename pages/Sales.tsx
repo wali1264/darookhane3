@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { Drug, SaleItem, SaleInvoice } from '../types';
@@ -76,37 +76,92 @@ const Sales: React.FC = () => {
     }, [searchTerm, drugs, isScanModeActive]);
 
 
-    const addToCart = (drug: Drug) => {
-        const existingItem = cart.find(item => item.drugId === drug.id);
-        if (existingItem) {
-            updateQuantity(drug.id!, Math.min(drug.totalStock, existingItem.quantity + 1));
-        } else {
-            if (drug.totalStock > 0) {
-                setCart([...cart, {
-                    drugId: drug.id!,
-                    name: drug.name,
-                    quantity: 1,
-                    unitPrice: drug.salePrice,
-                    totalPrice: drug.salePrice,
-                }]);
+    const addToCart = useCallback((drug: Drug) => {
+        setCart(currentCart => {
+            const existingItem = currentCart.find(item => item.drugId === drug.id);
+            if (existingItem) {
+                const newQuantity = Math.min(drug.totalStock, existingItem.quantity + 1);
+                 return currentCart.map(item =>
+                    item.drugId === drug.id!
+                        ? { ...item, quantity: newQuantity, totalPrice: item.unitPrice * newQuantity }
+                        : item
+                 );
+            } else {
+                if (drug.totalStock > 0) {
+                    return [...currentCart, {
+                        drugId: drug.id!,
+                        name: drug.name,
+                        quantity: 1,
+                        unitPrice: drug.salePrice,
+                        totalPrice: drug.salePrice,
+                    }];
+                }
             }
-        }
+            return currentCart;
+        });
         setSearchTerm('');
-    };
+    }, []);
+
+    // Global listener for barcode scanner when in scan mode
+    const scanBuffer = useRef('');
+    const scanTimeout = useRef<number | null>(null);
 
     useEffect(() => {
-        if (isScanModeActive && searchTerm.trim() !== '') {
-            const matchedDrug = drugs?.find(d => 
-                (d.barcode && d.barcode === searchTerm.trim()) || 
-                (d.internalBarcode && d.internalBarcode === searchTerm.trim())
-            );
-
-            if (matchedDrug) {
-                addToCart(matchedDrug);
-                // The search term is cleared inside addToCart, which re-triggers this effect with an empty string, stopping the loop.
-            }
+        if (!isScanModeActive) {
+            return;
         }
-    }, [searchTerm, isScanModeActive, drugs]); // This will run whenever searchTerm changes in scan mode
+
+        const handleGlobalKeyDown = (event: KeyboardEvent) => {
+            // Ignore if a modal is open or if modifier keys are pressed
+            if (document.querySelector('.modal-backdrop') || event.ctrlKey || event.altKey || event.metaKey) {
+                return;
+            }
+
+            if (event.key === 'Enter') {
+                if (scanBuffer.current.trim() !== '') {
+                    event.preventDefault(); // Prevent default form submission if any
+                    const barcode = scanBuffer.current.trim();
+                    const matchedDrug = drugs?.find(d => 
+                        (d.barcode && d.barcode === barcode) || 
+                        (d.internalBarcode && d.internalBarcode === barcode)
+                    );
+
+                    if (matchedDrug) {
+                        addToCart(matchedDrug);
+                    } else {
+                        showNotification(`بارکد "${barcode}" یافت نشد`, 'error');
+                    }
+                    
+                    scanBuffer.current = '';
+                    if (scanTimeout.current) clearTimeout(scanTimeout.current);
+                }
+                return;
+            }
+
+            if (event.key.length === 1) {
+                event.preventDefault(); // Stop the character from appearing in any focused input
+                scanBuffer.current += event.key;
+                
+                if (scanTimeout.current) clearTimeout(scanTimeout.current);
+                scanTimeout.current = window.setTimeout(() => {
+                    scanBuffer.current = '';
+                }, 150); // Reset buffer if typing is too slow (i.e., not a scanner)
+            }
+        };
+
+        window.addEventListener('keydown', handleGlobalKeyDown);
+        showNotification('حالت اسکن فعال شد. آماده دریافت بارکد.', 'info');
+
+        // Cleanup function
+        return () => {
+            window.removeEventListener('keydown', handleGlobalKeyDown);
+            if (scanTimeout.current) {
+                clearTimeout(scanTimeout.current);
+            }
+            scanBuffer.current = '';
+        };
+    }, [isScanModeActive, drugs, addToCart, showNotification]);
+
 
     const updateQuantity = (drugId: number, quantity: number) => {
         const drugInStock = drugs?.find(d => d.id === drugId);
