@@ -15,7 +15,7 @@ const Modal: React.FC<ModalProps> = ({ title, onClose, children, headerContent }
       onClick={onClose}
     >
       <div 
-        className="bg-gray-800 rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col border border-gray-600 animate-fade-in-up modal-content-wrapper"
+        className="bg-gray-800 rounded-lg shadow-2xl w-full max-w-[95vw] sm:max-w-xl md:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col border border-gray-600 animate-fade-in-up modal-content-wrapper"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-4 border-b border-gray-700 print-hidden">

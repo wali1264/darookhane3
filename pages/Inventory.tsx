@@ -133,12 +133,13 @@ const Inventory: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
             >
             <Plus size={20} />
-            <span>افزودن داروی جدید</span>
+            <span className="hidden sm:inline">افزودن داروی جدید</span>
             </button>
         )}
       </div>
       <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-700">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="overflow-x-auto hidden md:block">
           <table className="w-full text-sm text-right text-gray-300">
             <thead className="text-xs text-gray-400 uppercase bg-gray-700/50">
               <tr>
@@ -175,6 +176,42 @@ const Inventory: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Card List */}
+        <div className="md:hidden">
+            {drugs && drugs.length > 0 ? (
+            <div className="divide-y divide-gray-700">
+                {drugs.map(drug => {
+                const earliestExpiry = earliestExpiryDates.get(drug.id!);
+                const expiryDate = earliestExpiry ? new Date(earliestExpiry) : null;
+                const isSoonToExpire = expiryDate && expiryDate < getExpiryTargetDate;
+                return (
+                    <div key={drug.id} className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                        <p className={`font-bold text-lg ${isSoonToExpire ? 'text-yellow-300' : 'text-white'}`}>{drug.name}</p>
+                        <p className="text-sm text-gray-400">{drug.company}</p>
+                        </div>
+                        <div className="text-left flex-shrink-0 ml-4">
+                        <p className="font-semibold text-white">${drug.salePrice.toFixed(2)}</p>
+                        <p className="text-xs text-gray-400">موجودی: <span className="font-mono">{drug.totalStock}</span></p>
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-end gap-4 mt-3 pt-3 border-t border-gray-700/50">
+                        <button onClick={() => openBatchModal(drug)} className="text-gray-300 hover:text-white" title="مشاهده بچ‌ها"><PackageOpen size={20} /></button>
+                        <button onClick={() => openPrintLabelsModal(drug)} disabled={!drug.internalBarcode} className="text-green-400 hover:text-green-300 disabled:text-gray-600 disabled:cursor-not-allowed" title={!drug.internalBarcode ? "این دارو بارکد داخلی ندارد" : "چاپ برچسب"}><Printer size={20} /></button>
+                        {hasPermission('inventory:edit') && <button onClick={() => openModalForEdit(drug)} disabled={!isOnline} className="text-blue-400 hover:text-blue-300 disabled:text-gray-500 disabled:cursor-not-allowed" title={!isOnline ? "این عملیات در حالت آفلاین در دسترس نیست" : "ویرایش"}><Edit size={20} /></button>}
+                        {hasPermission('inventory:delete') && <button onClick={() => handleDelete(drug.id)} disabled={!isOnline} className="text-red-400 hover:text-red-300 disabled:text-gray-500 disabled:cursor-not-allowed" title={!isOnline ? "این عملیات در حالت آفلاین در دسترس نیست" : "حذف"}><Trash2 size={20} /></button>}
+                    </div>
+                    </div>
+                );
+                })}
+            </div>
+            ) : (
+            <p className="text-center py-8 text-gray-500">هیچ دارویی یافت نشد.</p>
+            )}
+        </div>
+
       </div>
       {isModalOpen && (
         <DrugFormModal drug={editingDrug} onClose={closeModal} />

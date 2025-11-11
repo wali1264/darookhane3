@@ -24,6 +24,7 @@ import { supabase } from './lib/supabaseClient';
 
 const MainApp: React.FC = () => {
   const [activePage, setActivePage] = useState<Page>('Dashboard');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const renderPage = useCallback(() => {
     switch (activePage) {
@@ -47,14 +48,21 @@ const MainApp: React.FC = () => {
   }, [activePage]);
 
   return (
-    <div className="flex h-screen bg-gray-900 text-gray-100">
-      <Sidebar activePage={activePage} setActivePage={setActivePage} />
+    <div className="relative flex h-screen bg-gray-900 text-gray-100">
+      <Sidebar activePage={activePage} setActivePage={setActivePage} isMobileOpen={isMobileSidebarOpen} setMobileOpen={setIsMobileSidebarOpen} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header currentPageTitle={pageTitles[activePage]} />
+        <Header currentPageTitle={pageTitles[activePage]} onMenuClick={() => setIsMobileSidebarOpen(true)} />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-4 sm:p-6 lg:p-8">
           {renderPage()}
         </main>
       </div>
+       {isMobileSidebarOpen && (
+        <div
+            className="fixed inset-0 bg-black/60 z-30 md:hidden"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            aria-hidden="true"
+        ></div>
+      )}
       <AIAssistant />
     </div>
   );

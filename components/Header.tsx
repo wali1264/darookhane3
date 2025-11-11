@@ -1,5 +1,5 @@
 import React, { useState, FormEvent } from 'react';
-import { Wifi, WifiOff, LogOut, UserCircle, User, KeyRound, Save } from 'lucide-react';
+import { LogOut, UserCircle, User, KeyRound, Save, Menu } from 'lucide-react';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useAuth } from '../contexts/AuthContext';
 import Modal from './Modal';
@@ -117,10 +117,10 @@ const MyProfileModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
 interface HeaderProps {
     currentPageTitle: string;
+    onMenuClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentPageTitle }) => {
-    const isOnline = useOnlineStatus();
+const Header: React.FC<HeaderProps> = ({ currentPageTitle, onMenuClick }) => {
     const { currentUser, logout } = useAuth();
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
@@ -128,7 +128,12 @@ const Header: React.FC<HeaderProps> = ({ currentPageTitle }) => {
     return (
         <>
             <header className="bg-gray-800 shadow-md p-4 flex justify-between items-center border-b border-gray-700">
-                <h1 className="text-2xl font-bold text-white">{currentPageTitle}</h1>
+                <div className="flex items-center gap-4">
+                     <button onClick={onMenuClick} className="p-2 -mr-2 rounded-full text-gray-400 hover:bg-gray-700 md:hidden" aria-label="Open menu">
+                        <Menu size={24} />
+                    </button>
+                    <h1 className="text-xl md:text-2xl font-bold text-white">{currentPageTitle}</h1>
+                </div>
                 <div className="flex items-center space-x-4">
                     <SyncStatus />
                      {currentUser && (
