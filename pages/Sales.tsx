@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { Drug, SaleItem, SaleInvoice } from '../types';
-import { Search, X, Plus, Minus, Printer, Edit, History, Filter, XCircle, Barcode } from 'lucide-react';
+import { Search, X, Plus, Minus, Printer, Edit, History, Filter, XCircle, Barcode, ChevronDown } from 'lucide-react';
 import Modal from '../components/Modal';
 import PrintableInvoice from '../components/PrintableInvoice';
 import { useVoiceInput } from '../hooks/useVoiceInput';
@@ -28,6 +28,8 @@ const Sales: React.FC = () => {
     const [dateFilter, setDateFilter] = useState<{ start: string | null, end: string | null }>({ start: null, end: null });
     const [customDateInputs, setCustomDateInputs] = useState({ start: '', end: '' });
     const [isScanModeActive, setIsScanModeActive] = useState(false);
+    const [isRecentInvoicesOpen, setIsRecentInvoicesOpen] = useState(false);
+
 
     const { hasPermission } = useAuth();
     const { showNotification } = useNotification();
@@ -327,8 +329,8 @@ const Sales: React.FC = () => {
                         ))}
                     </div>
                 </div>
-                 {/* Recent Invoices */}
-                <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 flex flex-col">
+                 {/* Recent Invoices (Desktop Only) */}
+                <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 flex-col hidden lg:flex">
                     <div className="border-b border-gray-600 pb-3 mb-3">
                         <h3 className="text-xl font-bold text-white flex items-center gap-2">
                             <History size={20} />
@@ -426,6 +428,72 @@ const Sales: React.FC = () => {
                     </button>
                 </div>
             </div>
+
+             {/* Recent Invoices (Mobile Accordion) */}
+            <div className="bg-gray-800 rounded-lg border border-gray-700 lg:hidden">
+                <button
+                    className="w-full p-4 flex justify-between items-center"
+                    onClick={() => setIsRecentInvoicesOpen(!isRecentInvoicesOpen)}
+                    aria-expanded={isRecentInvoicesOpen}
+                    aria-controls="recent-invoices-mobile"
+                >
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <History size={20} />
+                        فاکتورهای اخیر
+                    </h3>
+                    <ChevronDown className={`transform transition-transform duration-300 ${isRecentInvoicesOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <div 
+                    id="recent-invoices-mobile" 
+                    className={`transition-all duration-500 ease-in-out overflow-hidden ${isRecentInvoicesOpen ? 'max-h-[1000px]' : 'max-h-0'}`}
+                >
+                    <div className="p-6 pt-0">
+                        <div className="border-b border-gray-600 pb-3 mb-3">
+                             <div className="flex flex-wrap items-center gap-2 mt-3 text-sm">
+                                <Filter size={16} className="text-gray-400"/>
+                                <button onClick={() => setQuickFilter('today')} className="btn-filter">امروز</button>
+                                <button onClick={() => setQuickFilter('week')} className="btn-filter">این هفته</button>
+                                <button onClick={() => setQuickFilter('month')} className="btn-filter">این ماه</button>
+                                <input type="text" placeholder="از YYYY/MM/DD" value={customDateInputs.start} onChange={e => setCustomDateInputs(p => ({...p, start: e.target.value}))} onBlur={applyCustomDateFilter} className="input-date"/>
+                                <input type="text" placeholder="تا YYYY/MM/DD" value={customDateInputs.end} onChange={e => setCustomDateInputs(p => ({...p, end: e.target.value}))} onBlur={applyCustomDateFilter} className="input-date"/>
+                                {(dateFilter.start || dateFilter.end) && (
+                                    <button onClick={clearFilter} className="flex items-center gap-1 text-red-400 hover:text-red-300 text-xs p-1 rounded-full bg-red-500/10 hover:bg-red-500/20"><XCircle size={14}/>پاک کردن فیلتر</button>
+                                )}
+                            </div>
+                        </div>
+                        <div className="space-y-2 overflow-y-auto pr-2 -mr-2 max-h-96">
+                            {recentInvoices?.map(inv => (
+                                <div key={inv.id} className="p-3 bg-gray-700/60 rounded-lg flex justify-between items-center">
+                                    <div>
+                                        <p className="font-semibold text-white">فاکتور #{inv.remoteId || inv.id}</p>
+                                        <p className="text-sm text-gray-400">{new Date(inv.date).toLocaleString('fa-IR')} - ${inv.totalAmount.toFixed(2)}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => setInvoiceToPrint(inv)} className="flex items-center gap-2 text-sm px-3 py-1.5 bg-gray-600 text-white rounded-md hover:bg-gray-500">
+                                            <Printer size={14} />
+                                            <span className="hidden sm:inline">چاپ</span>
+                                        </button>
+                                        {hasPermission('sales:edit') && (
+                                            <button 
+                                                onClick={() => handleOpenEditModal(inv)} 
+                                                disabled={!isOnline}
+                                                title={!isOnline ? "این عملیات در حالت آفلاین در دسترس نیست" : "ویرایش"}
+                                                className="flex items-center gap-2 text-sm px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed">
+                                                <Edit size={14} />
+                                                 <span className="hidden sm:inline">ویرایش</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            {recentInvoices?.length === 0 && (
+                                <p className="text-center text-gray-500 py-8">هیچ فاکتوری برای این بازه زمانی یافت نشد.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {invoiceToPrint && (
                 <InvoiceModal invoice={invoiceToPrint} onClose={() => setInvoiceToPrint(null)} />
             )}
